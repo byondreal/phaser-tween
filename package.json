@@ -1,0 +1,33 @@
+{
+  "name": "phaser-tween",
+  "version": "1.0.0",
+  "description": "Phaser Tween Maker",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "easier-types": "^1.1.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.4"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/byondreal/phaser-tween"
+  },
+  "keywords": [
+    "phaser",
+    "tween",
+    "maker"
+  ],
+  "author": "Anup Bishnoi <pixelsallover@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/byondreal/phaser-tween/issues"
+  },
+  "homepage": "https://github.com/byondreal/phaser-tween"
+}
