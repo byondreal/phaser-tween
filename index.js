@@ -4,17 +4,25 @@ var check = require('easier-types');
 
 check.addTypes({
   'game-object': function(value) {
-    return 'function' === typeof get(value, 'game.tweens.create');
+    return 'function' === typeof get(value, 'game.add.tween');
   },
   'easing': function(value) {
     return 'function' === typeof value ||
-      ('object' === typeof window &&
-        'function' === typeof get(window, 'Phaser.Easing.' + value));
+      ('function' === typeof get(window, 'Phaser.Easing.' + value));
   }
 });
 
-function tween(obj, opts) {
-  check(obj).is('game-object');
+function tween(obj, opts, game) {
+  if (game) {
+    try {
+      check(game).is(window.Phaser.Game);
+    } catch(e) {
+      throw 'Phaser not loaded as window.Phaser';
+    }
+  } else {
+    check(obj).is('game-object');
+    game = obj.game;
+  }
   check(opts).is({
     values: 'object',
     duration: 'number',
@@ -29,7 +37,7 @@ function tween(obj, opts) {
     easing = get(window.Phaser.Easing, opts.easing);
   }
 
-  var t = obj.game.tweens.create(obj);
+  var t = game.add.tween(obj);
   t.to(opts.values, opts.duration, easing, false, opts.delay,
     opts.repeat, opts.yoyo);
   return t;

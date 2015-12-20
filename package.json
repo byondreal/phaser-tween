@@ -7,7 +7,8 @@
     "test": "test"
   },
   "dependencies": {
-    "easier-types": "^1.1.0"
+    "easier-types": "^1.1.0",
+    "getsetprop": "^1.1.0"
   },
   "devDependencies": {
     "mocha": "^2.3.4"
