@@ -28,7 +28,7 @@ function tween(obj, opts, game) {
     duration: 'number',
     easing: 'easing',
     delay: 'number?',
-    repeat: 'boolean?',
+    repeat: 'number?',
     yoyo: 'boolean?'
   });
 
