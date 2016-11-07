@@ -1,5 +1,4 @@
 var get = require('getsetprop').get;
-
 var check = require('easier-types');
 
 check.addTypes({
