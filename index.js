@@ -34,13 +34,14 @@ function tween(obj, opts, game, done, timeScale) {
 
   timeScale = timeScale || 1;
   var duration = opts.duration * timeScale;
+  var delay = opts.delay ? opts.delay * timeScale : 0;
 
   var t = game.add.tween(obj).to(
     opts.values,
     duration || 10,
     getEasing(opts.easing),
     false,
-    opts.delay,
+    delay,
     opts.repeat,
     opts.yoyo
   );
@@ -98,13 +99,23 @@ function keyframes(obj, opts, game, done, timeScale) {
   var duration = timeScale * getKeyframesDuration(opts);
 
   opts.keyframes.reduce(function(lastTween, frame) {
-    var t = game.add.tween(obj);
-    var values = {};
-    values[opts.property] = frame[2];
-    var kfDuration = frame[1] * timeScale;
-    var kfDelay = frame[0] * timeScale;
-    t.to(values, kfDuration || 10, getEasing(opts.easing), false, kfDelay);
+    var kfOpts;
+    if (Array.isArray(frame)) {
+      var values = {};
+      values[opts.property] = frame[2];
+      kfOpts = {
+        values: values,
+        duration: frame[1],
+        delay: frame[0],
+        easing: opts.easing,
+      };
+    } else if (typeof frame === 'object') {
+      kfOpts = frame;
+    } else {
+      throw new Error('unknown keyframe object: ' + JSON.stringify(frame));
+    }
 
+    var t = tween(obj, kfOpts, game, undefined, timeScale);
     if (!lastTween) {
       firstTween = t;
     } else {
