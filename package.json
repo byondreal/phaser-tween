@@ -1,6 +1,6 @@
 {
   "name": "phaser-tween",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Phaser Tween Maker",
   "main": "index.js",
   "directories": {
