@@ -86,7 +86,7 @@ function chain(obj, opts, game, done, timeScale) {
 function keyframes(obj, opts, game, done, timeScale) {
   check(obj).is('object');
   check(opts).is({
-    property: 'string',
+    property: 'string?',
     keyframes: 'array',
     easing: 'easing?',
   });
@@ -143,8 +143,14 @@ function wrap(fn, deco) {
 
 function getKeyframesDuration(opts) {
   return opts.keyframes.reduce(function(duration, frame) {
-    check(frame).is(['number', 'number', 'number']);
-    return duration + frame[0] + frame[1];
+    if (Array.isArray(frame)) {
+      check(frame).is(['number', 'number', 'number']);
+      return duration + frame[0] + frame[1];
+    }
+    if (typeof frame === 'object') {
+      return duration + (frame.delay || 0) + frame.duration;
+    }
+    return duration;
   }, 0);
 }
 
