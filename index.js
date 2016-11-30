@@ -11,12 +11,9 @@ check.addTypes({
   }
 });
 
-function tween(obj, opts, game, done, timeScale) {
-  if (Array.isArray(opts)) {
-    return chain(obj, opts, game, done, timeScale);
-  }
+function tween(obj, opts, game, done) {
   if (opts && opts.keyframes) {
-    return keyframes(obj, opts, game, done, timeScale);
+    return keyframes(obj, opts, game, done);
   }
 
   check(obj).is('object');
@@ -27,24 +24,25 @@ function tween(obj, opts, game, done, timeScale) {
     delay: 'number?',
     repeat: 'number?',
     yoyo: 'boolean?',
+    timeScale: 'number?',
   });
   check(game).is('game');
   check(done).is('function?');
-  check(timeScale).is('number?');
-
-  timeScale = timeScale || 1;
-  var duration = opts.duration * timeScale;
-  var delay = opts.delay ? opts.delay * timeScale : 0;
 
   var t = game.add.tween(obj).to(
     opts.values,
-    duration || 10,
+    // hack because of Phaser defaulting to duration of a second,
+    // even for duration explicitly sent as 0
+    opts.duration || 1,
     getEasing(opts.easing),
-    false,
-    delay,
+    false, // autoStart
+    opts.delay,
     opts.repeat,
     opts.yoyo
   );
+  if (typeof opts.timeScale === 'number') {
+    t.timeScale = opts.timeScale;
+  }
   if (done) {
     t.start().onComplete.add(function() {
       done();
@@ -53,120 +51,60 @@ function tween(obj, opts, game, done, timeScale) {
   return t;
 }
 
-function chain(obj, opts, game, done, timeScale) {
-  var duration = opts.reduce(function(total, tweenOpts) {
-    if (tweenOpts.keyframes) {
-      return total + getKeyframesDuration(tweenOpts);
-    }
-    return total + tweenOpts.duration;
-  }, 0);
-  duration *= timeScale || 1;
-
-  var firstTween;
-  opts.reduce(function(lastTween, tweenOpts) {
-    var t = tween(obj, tweenOpts, game, undefined, timeScale);
-    if (!lastTween) {
-      firstTween = t;
-    } else {
-      lastTween.chain(t);
-    }
-    return t;
-  }, null);
-
-  var t = getGenericTween(duration, game, done);
-  t.start = wrap(t.start, function() {
-    firstTween.start();
-  });
-  if (done) {
-    t.start();
-  }
-  return t;
-}
-
-function keyframes(obj, opts, game, done, timeScale) {
+function keyframes(obj, opts, game, done) {
   check(obj).is('object');
   check(opts).is({
-    property: 'string?',
     keyframes: 'array',
+    property: 'string?',
     easing: 'easing?',
+    timeScale: 'number?',
   });
   check(game).is('game');
   check(done).is('function?');
-  check(timeScale).is('number?');
 
-  var firstTween;
-  timeScale = timeScale || 1;
-  var duration = timeScale * getKeyframesDuration(opts);
-
-  opts.keyframes.reduce(function(lastTween, frame) {
-    var kfOpts;
-    if (Array.isArray(frame)) {
+  var t = game.add.tween(obj);
+  opts.keyframes.forEach(function(kf) {
+    if (Array.isArray(kf)) {
+      check(opts.property).is('string');
+      check(kf).is(function(val) {
+        return val.length === 3 && val.every(function(prop) {
+          return typeof prop === 'number';
+        });
+      });
       var values = {};
-      values[opts.property] = frame[2];
-      kfOpts = {
-        values: values,
-        duration: frame[1],
-        delay: frame[0],
-        easing: opts.easing,
-      };
-    } else if (typeof frame === 'object') {
-      kfOpts = frame;
-    } else {
-      throw new Error('unknown keyframe object: ' + JSON.stringify(frame));
+      values[opts.property] = kf[2];
+      t.to(values, kf[1] || 1, getEasing(opts.easing), false, kf[0]);
+      return;
     }
-
-    var t = tween(obj, kfOpts, game, undefined, timeScale);
-    if (!lastTween) {
-      firstTween = t;
-    } else {
-      lastTween.chain(t);
-    }
-    return t;
-  }, null);
-
-  var t = getGenericTween(duration, game, done);
-  t.start = wrap(t.start, function() {
-    firstTween.start();
+    check(kf).is({
+      values: 'object',
+      duration: 'number',
+      easing: 'easing?',
+      delay: 'number?',
+    });
+    t.to(kf.values, kf.duration || 1, getEasing(kf.easing),
+      false, kf.delay);
   });
+
+  if (typeof opts.timeScale === 'number') {
+    t.timeScale = opts.timeScale;
+  }
   if (done) {
-    t.start();
+    t.start().onComplete.add(function() {
+      done();
+    });
   }
   return t;
-}
-
-function wrap(fn, deco) {
-  return function() {
-    deco();
-    return fn.apply(this, arguments);
-  };
-}
-
-function getKeyframesDuration(opts) {
-  return opts.keyframes.reduce(function(duration, frame) {
-    if (Array.isArray(frame)) {
-      check(frame).is(['number', 'number', 'number']);
-      return duration + frame[0] + frame[1];
-    }
-    if (typeof frame === 'object') {
-      return duration + (frame.delay || 0) + frame.duration;
-    }
-    return duration;
-  }, 0);
 }
 
 function getEasing(easing) {
+  easing = easing || 'Default';
+  check(easing).is('easing');
+
   if ('function' === typeof easing) {
     return easing;
   }
-  return get(window.Phaser.Easing, easing || 'Default');
-}
-
-function getGenericTween(duration, game, done) {
-  done = done || noop;
-  var t = game.add.tween({ duration: 0 });
-  t.to({ duration: duration }, duration || 10, getEasing('Linear.None'));
-  t.onComplete.add(function() { done(); });
-  return t;
+  return get(window.Phaser.Easing, easing);
 }
 
 function maker(obj, optsParent, game) {
@@ -181,6 +119,5 @@ function maker(obj, optsParent, game) {
 function noop() {}
 
 tween.maker = maker;
-tween.keyframes = keyframes;
 module.exports = tween;
 
