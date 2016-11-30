@@ -15,6 +15,9 @@ function tween(obj, opts, game, done) {
   if (opts && opts.keyframes) {
     return keyframes(obj, opts, game, done);
   }
+  if (opts && Array.isArray(opts)) {
+    return keyframes(obj, { keyframes: opts }, game, done);
+  }
 
   check(obj).is('object');
   check(opts).is({
